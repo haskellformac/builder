@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -v
+
+TAR_URL=https://hackage.haskell.org/package/libffi-0.1/libffi-0.1.tar.gz
+CABAL_INSTALL_OPTIONS="--hsc2hs-option=--lflag=-Wl,-rpath,`ghc --print-libdir`"
+
+pkgid=`basename $0`
+tmpdir=`mktemp -d -t ${pkgid}` || exit 1
+echo "Building in ${tmpdir}"    >&2
+
+tar_fname=${tmpdir}/`basename ${TAR_URL}`
+
+curl ${TAR_URL} -o ${tar_fname}
+tar -C ${tmpdir} -xzf ${tar_fname}
+
+# NB: We make the build use the libffi bundled with GHC RTS, instead of an external one.
+libffi_cabal=${tmpdir}/${pkgid}/libffi.cabal
+sed -e's/pkgconfig-depends: libffi/--pkgconfig-depends: libffi/' <${libffi_cabal} >${libffi_cabal}.new
+mv ${libffi_cabal}.new ${libffi_cabal}
+
+(cd ${tmpdir}/${pkgid}; cabal install "${CABAL_INSTALL_OPTIONS}")
