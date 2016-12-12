@@ -13,4 +13,4 @@ curl ${TAR_URL} -o ${tar_fname}
 tar -C ${tmpdir} -xzf ${tar_fname}
 
 PREP
-(cd ${tmpdir}/${PKGID}; cabal install "${CABAL_INSTALL_OPTIONS}")
+(cd ${tmpdir}/${PKGID}; cabal install "${CABAL_INSTALL_OPTIONS[@]}")
