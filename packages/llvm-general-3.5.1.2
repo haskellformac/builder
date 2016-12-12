@@ -1,0 +1,8 @@
+PKGID=llvm-general-3.5.1.2
+TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
+CABAL_INSTALL_OPTIONS="--hsc2hs-option=--lflag=-Wl,-rpath,`ghc --print-libdir`"
+
+PREP() {
+}
+
+# NB: will implicitly install utf8-string
