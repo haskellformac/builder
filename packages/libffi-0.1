@@ -2,7 +2,7 @@ PKGID=libffi-0.1
 TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
 CABAL_INSTALL_OPTIONS="--hsc2hs-option=--lflag=-Wl,-rpath,`ghc --print-libdir`"
 
-PREP() {
+PRE() {
   # NB: We make the build use the libffi bundled with GHC RTS, instead of an external one.
   local libffi_cabal=${tmpdir}/${PKGID}/libffi.cabal
   sed -e's/pkgconfig-depends: libffi/--pkgconfig-depends: libffi/' <${libffi_cabal} >${libffi_cabal}.new

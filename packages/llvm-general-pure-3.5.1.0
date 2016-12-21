@@ -1,5 +1,4 @@
 PKGID=llvm-general-pure-3.5.1.0
 TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
-PREP() { return; }
 
 # NB: will implicitly install setenv
