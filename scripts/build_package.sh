@@ -2,6 +2,7 @@
 
 # Build the package whose builder spec is given in $1.
 
+export MACOSX_DEPLOYMENT_TARGET=10.11
 PRE()  { return; }
 POST() { return; }
 source $1
