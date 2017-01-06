@@ -10,11 +10,21 @@ source $1
 tmpdir=`mktemp -d -t ${PKGID}`      || exit 1
 echo "Building in ${tmpdir}"    >&2
 
-tar_fname=${tmpdir}/`basename ${TAR_URL}`
+if [ -n "${TAR_URL}" ]; then
+  
+  tar_fname=${tmpdir}/`basename ${TAR_URL}`
+  
+  curl ${TAR_URL} -o ${tar_fname}     || exit 1
+  tar -C ${tmpdir} -xzf ${tar_fname}  || exit 1
+  
+else
 
-curl ${TAR_URL} -o ${tar_fname}     || exit 1
-tar -C ${tmpdir} -xzf ${tar_fname}  || exit 1
+  mkdir -p ${tmpdir}/${PKGID}  
+  cabal_target=${PKGID}
+  
+fi
 
+# NB: The explicit --builddir option is important when $cabal_target is not empty.
 PRE
-(cd ${tmpdir}/${PKGID}; cabal install "${CABAL_INSTALL_OPTIONS[@]}")
+(cd ${tmpdir}/${PKGID}; cabal install --builddir=${tmpdir}/${PKGID}/dist --reinstall "${CABAL_INSTALL_OPTIONS[@]}" ${cabal_target})
 POST
