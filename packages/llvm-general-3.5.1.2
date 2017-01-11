@@ -24,12 +24,22 @@ POST() {
   local libdir=`ghc --print-libdir`
   local prefix=${tmpdir}/llvm
   local pkgkey=`ghc-pkg --global field ${PKGID} key | cut -d ' ' -f2`
+  local pkgfullid=`ghc-pkg --global field ${PKGID} id | cut -d ' ' -f2`
   
   ditto "${prefix}/bin"     "${libdir}/${pkgkey}/bin"
   ditto "${prefix}/include" "${libdir}/${pkgkey}/include"
   ditto "${prefix}/lib"     "${libdir}/${pkgkey}/lib"
   ditto "${prefix}/share"   "${libdir}/${pkgkey}/share"
   
+  # Rewrite paths in package conf to use the embedded LLVM C++ library
+  sed -e "s|/private${prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|/private${prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|/private${prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|/private${prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+      <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/${pkgfullid}.conf"
+  mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
+  ghc-pkg recache
+
   # RPATH for the Haskell library to find the C++ library
-  install_name_tool -add_rpath "@loader_path/lib" "${libdir}/${pkgkey}/libHS${PKGID}"*.dylib
+  install_name_tool -add_rpath "@loader_path/lib" "${libdir}/${pkgkey}/libHS${PKGID}"*.dylib  
 }

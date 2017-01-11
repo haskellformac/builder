@@ -26,5 +26,5 @@ fi
 
 # NB: The explicit --builddir option is important when $cabal_target is not empty.
 PRE   || exit 1
-(cd ${tmpdir}/${PKGID}; cabal install --builddir=${tmpdir}/${PKGID}/dist --reinstall "${CABAL_INSTALL_OPTIONS[@]}" ${cabal_target})   || exit 1
+(cd ${tmpdir}/${PKGID}; cabal install --builddir=${tmpdir}/${PKGID}/dist --reinstall --force-reinstalls "${CABAL_INSTALL_OPTIONS[@]}" ${cabal_target})   || exit 1
 POST
