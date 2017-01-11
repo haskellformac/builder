@@ -32,10 +32,11 @@ POST() {
   ditto "${prefix}/share"   "${libdir}/${pkgkey}/share"
   
   # Rewrite paths in package conf to use the embedded LLVM C++ library
-  sed -e "s|/private${prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
-      -e "s|/private${prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
-      -e "s|/private${prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
-      -e "s|/private${prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+  local canonical_prefix=`cd $prefix; pwd -P`
+  sed -e "s|${canonical_prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|${canonical_prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|${canonical_prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|${canonical_prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
       <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/${pkgfullid}.conf"
   mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
   ghc-pkg recache
