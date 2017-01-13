@@ -1,0 +1,4 @@
+SETID=accelerate-1.0
+DEPENDENCIES=(llvm-general-3.5)
+PACKAGES=(accelerate-1.0.0.0 accelerate-llvm-1.0.0.0 accelerate-llvm-native-1.0.0.0)
+SYNOPSIS="Embedded array language Accelerate with LLVM multicore CPU backend"

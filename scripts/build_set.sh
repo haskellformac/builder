@@ -10,10 +10,10 @@
 case "$1" in
   install | archive) 
     CMDS=$1
-    BUILDER=$2;;
+    BUILDER="`dirname $0`/../sets/$2";;
   *)
     CMDS=(install archive)
-    BUILDER=$1;;
+    BUILDER="`dirname $0`/../sets/$1";;
 esac
 
 source ${BUILDER}
@@ -31,13 +31,20 @@ dittoAndRewrite() {
       <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/package.conf.d/${pkgfullid}.conf"
 }
 
+all_packages=()
+for set in ${DEPENDENCIES[@]}; do
+  set_path=`dirname $0`/../sets/${set}
+  all_packages=(${all_packages[@]} `sh -c "source \"${set_path}\"; echo \\${PACKAGES[@]}"`)
+done
+all_packages=(${all_packages[@]} ${PACKAGES[@]})
+
 for cmd in "${CMDS[@]}"; do
   
   case ${cmd} in
 
     install) 
       echo "Installing ${SETID}..."               >&2
-      for package in "${PACKAGES[@]}"; do
+      for package in "${all_packages[@]}"; do
         ./build_package.sh ${package}
       done
       ;;
@@ -46,10 +53,10 @@ for cmd in "${CMDS[@]}"; do
       tmpdir=`mktemp -d -t ${SETID}`              || exit 1
       echo "Archiving ${SETID} in ${tmpdir}..."   >&2
       mkdir -p "${tmpdir}/package.conf.d"
-      for package in "${PACKAGES[@]}"; do
+      for package in "${all_packages[@]}"; do
         dittoAndRewrite "${tmpdir}" ${package}
       done
-      tar -czf ${SETID}.tar.gz -C "${tmpdir}" .
+      tar -cjf ${SETID}.tar.bz2 -C "${tmpdir}" .
       rm -rf "${tmpdir}"
       ;;
 

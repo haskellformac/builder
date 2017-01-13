@@ -8,7 +8,7 @@ libdir=`ghc --print-libdir`
 tmpdir=`mktemp -d -t ${archive}`                || exit 1
 echo "Unarchiving ${archive} to ${tmpdir}..."   >&2
 
-tar -xzf $1 -C "${tmpdir}"
+tar -xf $1 -C "${tmpdir}"
 
 for pkgconf in `ls "${tmpdir}"/package.conf.d/*.conf`; do
   sed -e "s|\$CONTAINERS|${HOME}/Library/Containers|g" <"${pkgconf}" >"${pkgconf}.local"
