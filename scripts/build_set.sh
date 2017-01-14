@@ -45,7 +45,7 @@ for cmd in "${CMDS[@]}"; do
     install) 
       echo "Installing ${SETID}..."               >&2
       for package in "${all_packages[@]}"; do
-        ./build_package.sh ${package}
+        "`dirname $0`/build_package.sh" ${package}
       done
       ;;
 
