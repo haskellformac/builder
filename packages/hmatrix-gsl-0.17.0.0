@@ -1,43 +1,45 @@
-PKGID=llvm-general-3.5.1.2
-TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
-# CABAL_INSTALL_OPTIONS set in PRE()
+PKGID=hmatrix-gsl-0.17.0.0
 
 PRE() {
-  local ctar_url=http://releases.llvm.org/3.5.1/llvm-3.5.1.src.tar.xz
+  local ctar_url=https://ftp.gnu.org/gnu/gsl/gsl-2.3.tar.gz
   local ctar_fname=${tmpdir}/`basename ${ctar_url}`
-  local prefix=${tmpdir}/llvm
-  local config_args="--enable-targets=host --enable-shared --enable-optimized --enable-bindings=none \
-                     --disable-docs --disable-clang-static-analyzer --disable-clang-arcmt"
+  local prefix=${tmpdir}/gsl
+  local config_args="--disable-dependency-tracking"
   curl ${ctar_url} -o ${ctar_fname}     || exit 1
   tar -C ${tmpdir} -xf ${ctar_fname}    || exit 1
- 
-  (cd ${tmpdir}/llvm-3.5.1.src; (./configure --prefix="${prefix}" ${config_args} && make && make install))
+
+  (cd ${tmpdir}/gsl-2.3; (./configure --prefix="${prefix}" ${config_args} && make && make install))
   
-  # Make sure the rest of the build uses our 'llvm-config'
-  export PATH="${prefix}/bin:${PATH}"
-  
-  # Ensure the hsc2hs binaries find libLLVM
-  CABAL_INSTALL_OPTIONS=("--hsc2hs-option=--lflag=-Wl,-rpath,${prefix}/lib" -fshared-llvm)
+  # Remove absolute path from GSL dylibs
+  for dylib in "${prefix}"/lib/libgsl.*.dylib "${prefix}"/lib/libgslcblas.*.dylib; do
+    install_name_tool -id "@rpath"/`basename "$dylib"` "$dylib"
+  done
+
+  # Make sure the rest of the build finds the GSL installation
+  export PKG_CONFIG_PATH="${prefix}/lib/pkgconfig"
 }
 
-# FIXME: Ought to be generalised. Only the 'llvm' in the def of 'prefix' is really LLVM-specific.
 POST() {
   local libdir=`ghc --print-libdir`
-  local prefix=${tmpdir}/llvm
+  local prefix=${tmpdir}/gsl
   local pkgkey=`ghc-pkg --global field ${PKGID} key | cut -d ' ' -f2`
   local pkgfullid=`ghc-pkg --global field ${PKGID} id | cut -d ' ' -f2`
-  
+
   ditto "${prefix}/bin"     "${libdir}/${pkgkey}/bin"
   ditto "${prefix}/include" "${libdir}/${pkgkey}/include"
   ditto "${prefix}/lib"     "${libdir}/${pkgkey}/lib"
   ditto "${prefix}/share"   "${libdir}/${pkgkey}/share"
-  
-  # Rewrite paths in package conf to use the embedded LLVM C++ library
+
+  # Rewrite paths in package conf to use the embedded GSL C library
   local canonical_prefix=`cd $prefix; pwd -P`
   sed -e "s|${canonical_prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
       -e "s|${canonical_prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
       -e "s|${canonical_prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
       -e "s|${canonical_prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+      -e "s|${prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|${prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|${prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|${prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
       <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/${pkgfullid}.conf"
   mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
   ghc-pkg recache
