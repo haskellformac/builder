@@ -1,0 +1,45 @@
+PKGID=hmatrix-gsl-stats-0.4.1.3
+
+PRE() {
+  local ctar_url=https://ftp.gnu.org/gnu/gsl/gsl-2.3.tar.gz
+  local ctar_fname=${tmpdir}/`basename ${ctar_url}`
+  local prefix=${tmpdir}/gsl
+  local config_args="--disable-dependency-tracking"
+  curl ${ctar_url} -o ${ctar_fname}     || exit 1
+  tar -C ${tmpdir} -xf ${ctar_fname}    || exit 1
+
+  (cd ${tmpdir}/gsl-2.3; (./configure --prefix="${prefix}" ${config_args} && make && make install))
+
+  # Remove absolute path from GSL dylibs
+  for dylib in "${prefix}"/lib/libgsl.*.dylib "${prefix}"/lib/libgslcblas.*.dylib; do
+    install_name_tool -id "@rpath"/`basename "$dylib"` "$dylib"
+  done
+
+  # Make sure the rest of the build finds the GSL installation
+  export PKG_CONFIG_PATH="${prefix}/lib/pkgconfig"
+}
+
+POST() {
+  local libdir=`ghc --print-libdir`
+  local prefix=${tmpdir}/gsl
+  local pkgkey=`ghc-pkg --global field ${PKGID} key | cut -d ' ' -f2`
+  local pkgfullid=`ghc-pkg --global field ${PKGID} id | cut -d ' ' -f2`
+  local hmatrix_gsl_pkgkey=`ghc-pkg --global field hmatrix-gsl key | cut -d ' ' -f2`
+
+  # Rewrite paths in package conf to use the embedded GSL C library
+  local canonical_prefix=`cd $prefix; pwd -P`
+  sed -e "s|${canonical_prefix}/bin|\"${libdir}/${hmatrix_gsl_pkgkey}/bin\"|g" \
+      -e "s|${canonical_prefix}/include|\"${libdir}/${hmatrix_gsl_pkgkey}/include\"|g" \
+      -e "s|${canonical_prefix}/lib|\"${libdir}/${hmatrix_gsl_pkgkey}/lib\"|g" \
+      -e "s|${canonical_prefix}/share|\"${libdir}/${hmatrix_gsl_pkgkey}/share\"|g" \
+      -e "s|${prefix}/bin|\"${libdir}/${hmatrix_gsl_pkgkey}/bin\"|g" \
+      -e "s|${prefix}/include|\"${libdir}/${hmatrix_gsl_pkgkey}/include\"|g" \
+      -e "s|${prefix}/lib|\"${libdir}/${hmatrix_gsl_pkgkey}/lib\"|g" \
+      -e "s|${prefix}/share|\"${libdir}/${hmatrix_gsl_pkgkey}/share\"|g" \
+      <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/${pkgfullid}.conf"
+  mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
+  ghc-pkg recache
+
+  # RPATH for the Haskell library to find the C library embedded in the hmatrix-gsl package
+  install_name_tool -add_rpath "@loader_path/../${hmatrix_gsl_pkgkey}/lib" "${libdir}/${pkgkey}/libHS${PKGID}"*.dylib  
+}

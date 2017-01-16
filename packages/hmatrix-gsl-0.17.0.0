@@ -44,6 +44,18 @@ POST() {
   mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
   ghc-pkg recache
 
+  # Rewite paths in gsl.pc, so that other packages can also refer to this library
+  sed -e "s|${canonical_prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|${canonical_prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|${canonical_prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|${canonical_prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+      -e "s|${prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|${prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|${prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|${prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+      <"${libdir}/${pkgkey}/lib/pkgconfig/gsl.pc" >"${libdir}/${pkgkey}/lib/gsl.pc"
+  mv -f "${libdir}/${pkgkey}/lib/gsl.pc" "${libdir}/${pkgkey}/lib/pkgconfig/gsl.pc"
+
   # RPATH for the Haskell library to find the C++ library
   install_name_tool -add_rpath "@loader_path/lib" "${libdir}/${pkgkey}/libHS${PKGID}"*.dylib  
 }
