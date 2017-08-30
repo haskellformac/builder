@@ -1,0 +1,3 @@
+SETID=hmatrix-0.18
+PACKAGES=(storable-complex-0.2.2 hmatrix-0.18.0.0 hmatrix-gsl-0.18.0.1 hmatrix-gsl-stats-0.4.1.6 hmatrix-special-0.4.0.1)
+SYNOPSIS="Numerical computations based on BLAS, LAPACK & GSL"

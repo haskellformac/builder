@@ -1,0 +1,9 @@
+PKGID=hmatrix-special-0.4.0.1
+
+PRE() {
+  local libdir=`ghc --print-libdir`
+  local hmatrix_gsl_pkgkey=`ghc-pkg --global field hmatrix-gsl key | cut -d ' ' -f2`
+  
+  # Ensure the hsc2hs binaries find libgsl
+  CABAL_INSTALL_OPTIONS=("--hsc2hs-option=--lflag=-Wl,-rpath,${libdir}/${hmatrix_gsl_pkgkey}/lib")
+}

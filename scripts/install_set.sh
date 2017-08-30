@@ -2,6 +2,8 @@
 
 # Install the package set archive provided in $1.
 
+export PATH=/usr/local/lib/HaskellCLI-8.0.2-8.9-3/bin:${PATH}
+
 archive=`basename $1`
 libdir=`ghc --print-libdir`
 
