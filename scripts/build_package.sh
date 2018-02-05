@@ -2,9 +2,9 @@
 
 # Build the package whose builder spec is given in $1.
 
-export PATH=/usr/local/lib/HaskellCLI-8.0.2-8.9-3/bin:${PATH}
+export PATH=/usr/local/lib/HaskellCLI-8.0.2-9.6-1/bin:${PATH}
 
-export MACOSX_DEPLOYMENT_TARGET=10.11
+export MACOSX_DEPLOYMENT_TARGET=10.12
 PRE()  { return; }
 POST() { return; }
 source "`dirname $0`/../packages/$1"

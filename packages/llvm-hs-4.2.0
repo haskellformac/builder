@@ -1,18 +1,34 @@
-# DEPRECATED
-PKGID=llvm-general-3.5.1.2
-TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
+PKGID=llvm-hs-4.2.0
 # CABAL_INSTALL_OPTIONS set in PRE()
 
 PRE() {
-  local ctar_url=http://releases.llvm.org/3.5.1/llvm-3.5.1.src.tar.xz
+  local ctar_url=http://releases.llvm.org/4.0.1/llvm-4.0.1.src.tar.xz
   local ctar_fname=${tmpdir}/`basename ${ctar_url}`
   local prefix=${tmpdir}/llvm
-  local config_args="--enable-targets=host --enable-shared --enable-optimized --enable-bindings=none \
-                     --disable-docs --disable-clang-static-analyzer --disable-clang-arcmt"
+  local config_args="-DCMAKE_BUILD_TYPE=Release \
+                     -DLLVM_ENABLE_ASSERTIONS=ON \
+                     -DLLVM_OPTIMIZED_TABLEGEN=ON \
+                     -DLLVM_INCLUDE_DOCS=OFF \
+                     -DLLVM_ENABLE_RTTI=ON \
+                     -DLLVM_ENABLE_EH=ON \
+                     -DLLVM_INSTALL_UTILS=ON \
+                     -DWITH_POLLY=OFF \
+                     -DLLVM_TARGETS_TO_BUILD=host \
+                     -DLIBOMP_ARCH=x86_64 \
+                     -DLLVM_BUILD_EXTERNAL_COMPILER_RT=OFF \
+                     -DLLVM_BUILD_LLVM_DYLIB=ON \
+                     -DLLVM_LINK_LLVM_DYLIB=ON \
+                     -DLLVM_ENABLE_LIBCXX=OFF \
+                     -DLLVM_ENABLE_FFI=ON"
   curl ${ctar_url} -o ${ctar_fname}     || exit 1
   tar -C ${tmpdir} -xf ${ctar_fname}    || exit 1
  
-  (cd ${tmpdir}/llvm-3.5.1.src; (./configure --prefix="${prefix}" ${config_args} && make && make install))
+  (mkdir ${tmpdir}/llvm-4.0.1.build; cd ${tmpdir}/llvm-4.0.1.build; \
+   (cmake ${tmpdir}/llvm-4.0.1.src -DCMAKE_INSTALL_PREFIX="${prefix}" ${config_args} && make && make install))
+  # FIXME: REMOVE
+  ls -l ${prefix}/bin
+  (cd ${tmpdir}/llvm-4.0.1.build; (make llvm-config && cp -f bin/llvm-config ${prefix}/bin))
+  (cd ${prefix}/lib; ln -s libLLVM.dylib libLLVM-4.0.dylib)
   
   # Make sure the rest of the build uses our 'llvm-config'
   export PATH="${prefix}/bin:${PATH}"
@@ -31,7 +47,6 @@ POST() {
   ditto "${prefix}/bin"     "${libdir}/${pkgkey}/bin"
   ditto "${prefix}/include" "${libdir}/${pkgkey}/include"
   ditto "${prefix}/lib"     "${libdir}/${pkgkey}/lib"
-  ditto "${prefix}/share"   "${libdir}/${pkgkey}/share"
   
   # Rewrite paths in package conf to use the embedded LLVM C++ library
   local canonical_prefix=`cd $prefix; pwd -P`
