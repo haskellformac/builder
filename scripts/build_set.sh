@@ -7,7 +7,7 @@
 # NB: This is a rather simplistic first implementation. It relies on the builder spec for the set to explicitly specify
 #     the order in which packages need to be built and doesn't support parallel building of independent packages.
 
-export PATH=/usr/local/lib/HaskellCLI-8.0.2-9.6-1/bin:${PATH}
+export PATH=/usr/local/lib/HaskellCLI-8.0.2-9.6-2/bin:${PATH}
 
 case "$1" in
   install | archive) 
