@@ -1,0 +1,63 @@
+PKGID=llvm-hs-7.0.1
+# CABAL_INSTALL_OPTIONS set in PRE()
+
+PRE() {
+  local ctar_url=https://releases.llvm.org/7.0.1/llvm-7.0.1.src.tar.xz 
+  local ctar_fname=${tmpdir}/`basename ${ctar_url}`
+  local prefix=${tmpdir}/llvm
+  local config_args="-DCMAKE_BUILD_TYPE=Release \
+                     -DLLVM_ENABLE_ASSERTIONS=ON \
+                     -DLLVM_OPTIMIZED_TABLEGEN=ON \
+                     -DLLVM_INCLUDE_DOCS=OFF \
+                     -DLLVM_ENABLE_RTTI=ON \
+                     -DLLVM_ENABLE_EH=ON \
+                     -DLLVM_INSTALL_UTILS=ON \
+                     -DWITH_POLLY=OFF \
+                     -DLLVM_TARGETS_TO_BUILD=host \
+                     -DLIBOMP_ARCH=x86_64 \
+                     -DLLVM_BUILD_EXTERNAL_COMPILER_RT=OFF \
+                     -DLLVM_BUILD_LLVM_DYLIB=ON \
+                     -DLLVM_LINK_LLVM_DYLIB=ON \
+                     -DLLVM_ENABLE_LIBCXX=OFF \
+                     -DLLVM_ENABLE_FFI=ON"
+  curl ${ctar_url} -o ${ctar_fname}     || exit 1
+  tar -C ${tmpdir} -xf ${ctar_fname}    || exit 1
+ 
+  (mkdir ${tmpdir}/llvm-7.0.1.build; cd ${tmpdir}/llvm-7.0.1.build; \
+   (cmake ${tmpdir}/llvm-7.0.1.src -DCMAKE_INSTALL_PREFIX="${prefix}" ${config_args} && make -j7 && make install))
+  # FIXME: REMOVE
+  ls -l ${prefix}/bin
+  (cd ${tmpdir}/llvm-7.0.1.build; (make llvm-config && cp -f bin/llvm-config ${prefix}/bin))
+  (cd ${prefix}/lib; ln -s libLLVM.dylib libLLVM-7.dylib)
+  
+  # Make sure the rest of the build uses our 'llvm-config'
+  export PATH="${prefix}/bin:${PATH}"
+  
+  # Ensure the hsc2hs binaries find libLLVM
+  CABAL_INSTALL_OPTIONS=("--hsc2hs-option=--lflag=-Wl,-rpath,${prefix}/lib" -fshared-llvm)
+}
+
+# FIXME: Ought to be generalised. Only the 'llvm' in the def of 'prefix' is really LLVM-specific.
+POST() {
+  local libdir=`ghc --print-libdir`
+  local prefix=${tmpdir}/llvm
+  local pkgkey=`ghc-pkg --global field ${PKGID} key | cut -d ' ' -f2`
+  local pkgfullid=`ghc-pkg --global field ${PKGID} id | cut -d ' ' -f2`
+  
+  ditto "${prefix}/bin"     "${libdir}/${pkgkey}/bin"
+  ditto "${prefix}/include" "${libdir}/${pkgkey}/include"
+  ditto "${prefix}/lib"     "${libdir}/${pkgkey}/lib"
+  
+  # Rewrite paths in package conf to use the embedded LLVM C++ library
+  local canonical_prefix=`cd $prefix; pwd -P`
+  sed -e "s|${canonical_prefix}/bin|\"${libdir}/${pkgkey}/bin\"|g" \
+      -e "s|${canonical_prefix}/include|\"${libdir}/${pkgkey}/include\"|g" \
+      -e "s|${canonical_prefix}/lib|\"${libdir}/${pkgkey}/lib\"|g" \
+      -e "s|${canonical_prefix}/share|\"${libdir}/${pkgkey}/share\"|g" \
+      <"${libdir}/package.conf.d/${pkgfullid}.conf" >"${tmpdir}/${pkgfullid}.conf"
+  mv -f "${tmpdir}/${pkgfullid}.conf" "${libdir}/package.conf.d/${pkgfullid}.conf"
+  ghc-pkg recache
+
+  # RPATH for the Haskell library to find the C++ library
+  install_name_tool -add_rpath "@loader_path/lib" "${libdir}/${pkgkey}/libHS${PKGID}"*.dylib  
+}

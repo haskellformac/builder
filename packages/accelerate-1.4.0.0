@@ -1,0 +1,3 @@
+PKGID=accelerate-1.4.0.0
+# TAR_URL=https://hackage.haskell.org/package/${PKGID}/${PKGID}.tar.gz
+GIT_URL=https://github.com/AccelerateHS/accelerate.git

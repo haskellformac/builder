@@ -1,0 +1,9 @@
+SETID=accelerate-1.4
+DEPENDENCIES=(llvm-hs-7.0)
+# The following package list is not complete (for binary archiving)
+#   For 'accelerate-1.4.0.0' we still need: prettyprinter-1.2.1 prettyprinter-ansi-terminal-1.1.1.2
+#   For 'accelerate-llvm-native-1.4.0.0' we still need: atomic-primops-0.8.2 lockfree-queue-0.2.3.1
+# TODO: include accelerate-io-1.0.0.1, but it is split into subpackages now
+# TODO: add BLAS support again: storable-complex-0.2.2 blas-hs-0.1.1.0 accelerate-blas-0.1.0.1
+PACKAGES=(setenv-0.1.1.3 accelerate-1.4.0.0 accelerate-llvm-1.4.0.0 libffi-0.1 accelerate-llvm-native-1.1.0.1)
+SYNOPSIS="Embedded array language Accelerate with LLVM multicore CPU backend"
